@@ -6,13 +6,14 @@
 /*   By: aleslie <aleslie@student.21-school.ru>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/14 23:10:00 by aleslie           #+#    #+#             */
-/*   Updated: 2021/10/19 18:02:18 by aleslie          ###   ########.fr       */
+/*   Updated: 2021/10/21 17:21:24 by aleslie          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ft_printf.h"
 
-void	ft_putchar_fd(char c, int fd)
+int	ft_putchar_fd(char c, int fd)
 {
 	write(fd, &c, 1);
+	return (1);
 }
