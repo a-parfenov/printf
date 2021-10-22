@@ -6,100 +6,93 @@
 /*   By: aleslie <aleslie@student.21-school.ru>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/18 21:00:44 by aleslie           #+#    #+#             */
-/*   Updated: 2021/10/21 17:40:55 by aleslie          ###   ########.fr       */
+/*   Updated: 2021/10/22 04:09:53 by aleslie          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ft_printf.h"
 
-static int ft_printf_x(unsigned long nbr)
+static int	ft_printf_xX(size_t num, size_t base, char *alfabet)
 {
-	char	*str;
-	int		i;
+	int	index[100];
+	int	i;
+	int	tmp;
 
-	i = 0;
-	str = ft_itoa(nbr, 16);
-	while (str[i])
+	if (!alfabet || ft_strlen(alfabet) < base)
+		return (-1);
+	index[0] = 0;
+	i = num == 0;
+	while (num)
 	{
-		if ('A' <= str[i] && str[i] <= 'Z')
-			str[i] += 32;
+		index[i] = num % base;
+		num /= base;
 		++i;
 	}
-	ft_putstr_fd(str, 1);
-	free(str);
-	return (ft_strlen(str));
+	tmp = i;
+	while (i)
+		write(1, &alfabet[index[--i]], 1);
+	return (tmp);
 }
 
-static int ft_printf_X(unsigned long nbr)
+static void	ft_check_s(t_all *all, char *s)
 {
-	char	*str;
-	int		i;
-	
-	i = 0;
-	str = ft_itoa(nbr, 16);
-	while (str[i])
-	{
-		if ('a' <= str[i] && str[i] <= 'z')
-			str[i] -= 32;
-		++i;
-	}
-	ft_putstr_fd(str, 1);
-	free(str);
-	return (ft_strlen(str));
+	if (s == NULL)
+		all->count += write(1, "(null)", 6);
+	else
+		all->count += write(1, s, ft_strlen(s));
 }
 
-static int ft_printf_p(unsigned long long nbr)
+static int	ft_putnbr(ssize_t n, int count)
 {
-	char	*str;
-	int		i;
-	
-	i = 0;
-	str = ft_itoa(nbr, 16);
-	ft_putstr_fd("0x", 1);
-	ft_putstr_fd(str, 1);
-	free(str);
-	return (ft_strlen(str) + 2);
-}
+	char	c;
 
-int ft_printf(const char *str, ...)
-{
-	va_list	argc;
-	int		i;
-	int		count;
-	char	*tmp_str;
-	va_start(argc, str);
-	
-	i = 0;
-	count = 0;
-	while (str[i])
-	{
-		if (str[i] == '%' && str[i + 1] != '\0')
-		{
-			++i;
-			if (str[i] == '%')
-				count += write(1, "%", 1);
-			else if (str[i] == 's')
-				count += ft_putstr_fd(va_arg(argc, char *), 1);
-			else if (str[i] == 'c')
-			{
-				tmp_str = va_arg(argc, void *);
-				count += ft_putchar_fd(*tmp_str, 1);
-			}
-			else if (str[i] == 'd' || str[i] == 'i')
-				count += ft_putnbr_fd(va_arg(argc, int), 1);
-			else if (str[i] == 'u')
-				count += ft_putnbr_fd(va_arg(argc, unsigned int), 1);
-			else if (str[i] == 'x')
-				count += ft_printf_x(va_arg(argc, unsigned long));
-			else if (str[i] == 'X')
-				count += ft_printf_X(va_arg(argc, unsigned long));
-			else if (str[i] == 'p')
-				count += ft_printf_p(va_arg(argc, unsigned long long));
-		}
-		else
-			count += write(1, &str[i], 1);
-		++i;
-	}
-	va_end(argc);
+	if (!(n / 10 == 0))
+		count = ft_putnbr((n / 10), count);
+	count += write(1, "-", (n < 0 && (n / 10 == 0)));
+	count += write(1, &c + 0 * (c = n % 10 * (1 - 2 * (n < 0)) + '0'), 1);
 	return (count);
+}
+
+static void	ft_check_type(t_all *all, char *str)
+{
+	if (str[++all->i] == '%')
+		all->count += write(1, "%", 1);
+	else if (str[all->i] == 's')
+		ft_check_s(all, va_arg(all->argc, void *));
+	else if (str[all->i] == 'c')
+	{
+		all->tmp_str = va_arg(all->argc, int);
+		all->count += write(1, &all->tmp_str, 1);
+	}
+	else if (str[all->i] == 'd' || str[all->i] == 'i')
+		all->count += ft_putnbr(va_arg(all->argc, int), 0);
+	else if (str[all->i] == 'u')
+		all->count += ft_putnbr((t_un_int)va_arg(all->argc, int), 0);
+	else if (str[all->i] == 'x')
+		all->count += ft_printf_xX((t_un_int)va_arg(all->argc, int), 16, HEX_L);
+	else if (str[all->i] == 'X')
+		all->count += ft_printf_xX((t_un_int)va_arg(all->argc, int), 16, HEX_U);
+	else if (str[all->i] == 'p')
+	{
+		all->count += write(1, "0x", 2);
+		all->count += ft_printf_xX(va_arg(all->argc, long), 16, HEX_L);
+	}
+}
+
+int	ft_printf(const char *str, ...)
+{
+	t_all	all;
+
+	va_start(all.argc, str);
+	all.i = -1;
+	all.count = 0;
+	while (str[++all.i])
+	{
+		if (str[all.i] == '%' && str[all.i + 1] != '\0')
+			ft_check_type(&all, (char *)str);
+		else
+			all.count += write(1, &str[all.i], 1);
+	}
+	va_end(all.argc);
+	return (all.count);
 }

@@ -1,8 +1,7 @@
 NAME	=	libftprintf.a
 
-SRCS	=	printf.c	ft_putnbr_fd.c	ft_putstr_fd.c\
-			ft_strlen.c	ft_strchr.c		ft_strdup.c\
-			ft_strlcpy.c	ft_putchar_fd.c	ft_itoa.c
+SRCS	=	printf.c	\
+			ft_strlen.c	\
 
 OBJ		=	$(SRCS:%.c=%.o)
 HEADERS	=	ft_printf.h
